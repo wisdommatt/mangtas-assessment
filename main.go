@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+type wordCountsResponse struct {
+	Status     string      `json:"status"`
+	Message    string      `json:"message"`
+	WordCounts []wordCount `json:"wordCounts"`
+}
+
 type wordCount struct {
 	Word  string `json:"word"`
 	Count int    `json:"count"`
@@ -22,24 +28,41 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+port, serveMux))
 }
 
+// mostUsedWordsHandler is the http route handler for returning
+// the top 10 most used words in a text.
 func mostUsedWordsHandler(rw http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(rw, "only POST request accepted", http.StatusBadRequest)
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(wordCountsResponse{
+			Status:  "error",
+			Message: "only POST request accepted",
+		})
 		return
 	}
 	var text string
 	err := json.NewDecoder(r.Body).Decode(&text)
 	if err != nil {
-		http.Error(rw, err.Error(), http.StatusBadRequest)
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(wordCountsResponse{
+			Status:  "error",
+			Message: err.Error(),
+		})
 		return
 	}
-
 	wordCounts := extractWordsCount(text)
 	if len(wordCounts) < 10 {
-		http.Error(rw, "text does not contain upto 10 unique words", http.StatusBadRequest)
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(wordCountsResponse{
+			Status:  "error",
+			Message: "text does not contain upto 10 unique words",
+		})
 		return
 	}
-	json.NewEncoder(rw).Encode(wordCounts[0:10])
+	json.NewEncoder(rw).Encode(wordCountsResponse{
+		Status:     "success",
+		Message:    "Word counts returned successfully",
+		WordCounts: wordCounts[0:10],
+	})
 }
 
 // extractWordsCount returns occurence count for all the words
