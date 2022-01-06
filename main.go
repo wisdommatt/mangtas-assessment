@@ -66,7 +66,7 @@ func mostUsedWordsHandler(rw http.ResponseWriter, r *http.Request) {
 }
 
 // extractWordsCount returns occurence count for all the words
-// in the text in ascending order.
+// in the text in descending order.
 func extractWordsCount(text string) []wordCount {
 	wordsMap := map[string]int{}
 	textArray := strings.Split(text, " ")
